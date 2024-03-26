@@ -1,0 +1,13 @@
+
+#logging params
+log: True
+log_interval: 250
+heavy_log_interval: 1000 #same as save_interval
+save_model: True
+save_interval: 1000
+
+remove_last_checkpoint: True
+
+num_sigma_bins: 20
+
+print_model_summary: False

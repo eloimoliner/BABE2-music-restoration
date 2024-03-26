@@ -1,0 +1,25 @@
+name: "vocalset"
+type: "audio"
+callable: "datasets.singing_voice_datasets.VocalSet_singlesinger"
+singer_id: "female1"
+#path: "/u/25/molinee2/unix/datasets/MusicNet/train"
+path: "/scratch/elec/t412-asp/audio_datasets/singing_voice/VocalSet/FULL"
+
+overfit: False
+
+sigma_data: 0.04
+
+normalize_to_1: True
+      
+apply_random_gain: True
+gain_range: [-3, 3]
+
+test:
+   callable: "datasets.singing_voice_datasets.AudioFolderDatasetTest"
+   #path: "/u/25/molinee2/unix/datasets/MusicNet/train"
+   #path: "/scratch/elec/t412-asp/audio_datasets/CocoChorales/cocochorales_full_v1_zipped/strings/test"
+   path: "/scratch/elec/t412-asp/audio_datasets/singing_voice/VocalSet/FULL/female1/test"
+   stereo: False
+   num_samples: 2
+   batch_size: 1
+

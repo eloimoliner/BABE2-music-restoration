@@ -1,0 +1,284 @@
+do_test: True #boolean flag to run inference, False means no testing at all
+
+type: "blind"
+
+name: "tester_blind_bwe" #same as the file name, try to do that for all testers
+
+#callable: 'testing.blind_bwe_tester.BlindTester'
+callable: 'testing.singer_evaluator.Evaluator'
+sampler_callable: 'testing.blind_bwe_sampler_BABE2.BlindSampler'
+
+#modes: ['unconditional', 'bwe', 'inpainting'] #modes to test
+#modes: ['unconditional_operator','blind_bwe','unconditional', 'bwe'] #modes to test
+#modes: ['unconditional_operator','filter_bwe'] #modes to test
+#modes: ['unconditional','real_blind_bwe_complete','blind_bwe','real_blind_bwe','bwe'] #modes to test
+#modes: ['unconditional','bwe','blind_bwe','real_blind_bwe'] #modes to test
+#modes: ['informed_bwe'] #modes to test
+#modes: ['informed_bwe'] #modes to test
+#modes: ['single_example'] #modes to test
+modes: ['multiple_recordings'] #modes to test
+#modes: ['real_blind_bwe_complete'] #modes to test
+#modes: ['unconditional'] #modes to test
+#modes: ['bwe','blind_bwe'] #modes to test
+#modes: ['unconditional_operator', 'filter_bwe'] #modes to test
+
+T: 51 #number of discretizatio steprs
+order: 2 #order of the discretization TODO: implement higher order samplers as the one used in ediffi
+
+filter_out_cqt_DC_Nyq: True
+
+checkpoint: "weights-489999.pt"
+base_checkpoint: None
+
+evaluation:
+  path_dataset: "/scratch/elec/t412-asp/audio_datasets/archive_SV/historical_singers"
+  singer: "enrico_caruso"
+  single_recording: "78_a-vucchella_enrico-caruso-tosti_gbia0123942b/_A_Vucchella_-_ENRICO_CARUSO_-_Tosti.flac_denoised_vocals.wav"
+  #single_recording: "78_aubade-le-roi-dys_nellie-melba-e-lalo_gbia0294299a/AUBADE_-__Le_Roi_D_ys__-_Nellie_Melba_-_E._LALO.flac_denoised_vocals.wav"
+  start_s: [20,] #in seconds
+  #segment_length: 1048576 #in samples
+  segment_length: 262144 #in samples
+  num_segments_batch: 1
+  segment_placement: "middle" #random, middle or start_s
+  csv_file: "cropped_vocals.csv" #for multiple recordings mode
+  #csv_file: "separated_vocals_LTAS2.csv" #for multiple recordings mode
+  LTAS_init: True
+  LTAS_file: "/scratch/work/molinee2/projects/BABE2/evaluation/LTAS_male2_train.pt"
+  LTAS_as_y: True
+  num_recordings: 1 
+  #process_complete_mode: "LTI_blind_and_complete"
+  process_complete_mode: "AR_blind_and_complete"
+  overlap: 0.1
+
+
+
+unconditional:
+  num_samples: 8
+  audio_len: 184184
+
+posterior_sampling:
+  xi: 0.5 # ) (between 0.4 and 0.8a for l2_sum)
+  xi_round2: 0.4
+  lr: 0.1
+  rec_distance: "l2_sum" #or "multiresSTFT"
+  rec_distance_operator: "l2_hp" #or "multiresSTFT"
+  prior_distance: "RED" #or "multiresSTFT"
+  weight_rec_loss: 1 #use 0.00005 for multi-res STFT
+  weight_rec_loss_operator: 1 #use 0.00005 for multi-res STFT
+  annealing_y:
+    use: True
+    use_round2: True
+    mode: "fixed"
+    #mode: "same_as_x_limited"
+    #mode: "same_as_x"
+    sigma_min: 1
+  multibatch:
+    n_batch: 1
+  grad_clipping: False
+  clip_value: 0.5
+  data_consistency: False #always False for blind bwe
+  compensate_transition: True
+  stft_distance:
+    mag: False
+    use: False
+    use_multires: False
+    nfft: 2048
+  norm: 2  #"smoothl1" #1 or 2 or "smoothl1"
+  smoothl1_beta: 1
+  SNR_observations: "None"  #adding noise helps to stabilize the inference
+  sigma_observations: None #adding noise is critical!
+  start_sigma: 10
+  start_sigma_round2: 10
+  freq_weighting: "None"
+  freq_weighting_filter: "sqrt"
+  normalization: "grad_norm"
+
+#new diffusion parameters (only for sampling):
+diff_params:
+  same_as_training: False
+  sigma_data: 1 #default for maestro
+  sigma_min: 1e-3
+  sigma_max: 100
+  P_mean: -1.2 #what is this for?
+  P_std: 1.2 #ehat is this for?
+  ro: 13
+  ro_train: 13
+  Schurn: 10
+  Snoise: 1.000
+  Stmin: 0
+  Stmax: 50
+
+initialization:
+  type: "zeros"
+  sigma_init: 0.01
+
+sampler: "stochastic" #wether deterministic or stochastic, unused as Scurn defineds the stochasticity
+
+bandwidth_extension:
+  sigma_observations: 0.00 #adding noise is critical!
+  #start_sigma: "None" #this is the initial noise level, applied to the observations as the first step of the inference, "None" means start from sigma_max
+
+  gain_boost: 0 #db boost to the gain of the audio signal
+
+  test_filter_fit: False #testing fitting for blind bwe experiments
+  compute_sweep: False #also logging stuff for blind bwe experiments
+  decimate:
+    factor: 1
+  filter:
+    type: "firwin" #or "cheby1_fir"
+    fc: 1000 #cutoff frequency of the applied lpf
+    order: 500
+    fir_order: 500
+    beta: 1
+    ripple: 0.05 #for the cheby1
+    resample:
+      fs: 2000
+    biquad:
+      Q: 0.707
+
+inpainting:
+  gap_length: 1000 #in ms
+  start_gap_idx: None #in ms, None means at the middle
+comp_sens: 
+  percentage: 5 #%
+phase_retrieval:
+  win_size: 1024
+  hop_size: 256
+max_thresh_grads: 1
+type_spec: "linear" #or "mel" for phase retrieval
+declipping:
+  SDR: 3 #in dB
+
+       
+real_informed_bwe:
+  filter:
+    fc: [2500, 4000]
+    A: [-40, -45]
+  apply_filter_in_observations: False #WARNING set to False
+
+#REDdiff_schedule:
+#  type: "monotonic_log"
+#  ro: 10
+REDdiff_schedule:
+  type: "multiepoch_monotonic_log"
+  ro: 10
+  num_epochs: 2
+
+
+distortion:
+  distortion_type: "tanh"
+  drive_db: 30
+
+blind_bwe: #this involves generative model of filters
+  #num_slopes: 1
+  lr_filter: 10
+  num_x_updates_per_step: 1
+  num_filter_updates_per_step: 100
+  beta_eps: 0 #part of the noise that is deterministic
+  weight_decay: 0
+  clip_grad_norm: 1
+
+  gain_boost: 0 #db boost to the gain of the audio signal
+  sigma_norm: 1
+  #LTAS:               
+  #  sample_rate: 44100
+  #  audio_len: 368368
+  #  path: "/scratch/work/molinee2/datasets/MAESTRO/LTAS_MAESTRO.pt"
+  real_recordings:
+    path: /scratch/work/molinee2/datasets/vocal_restoration/chosen
+    num_samples: 4
+  #SNR_observations: 50
+  #sigma_observations: 0.01 #adding noise is critical!
+  SNR_observations: None #adding noise is critical!
+  compute_sweep: False #also logging stuff for blind bwe experiments
+  Gain:
+    optimize_G: False
+
+  fcmin: 11 #or a number
+  fcmax: "nyquist" #or a number
+  Amin: -40
+  Amax: 40
+  Alim: 80
+  NFFT: 4096
+  sigma_den_estimate: 0.000 #this is the noise level of the observations, used for regularization
+  test_filter:
+    fref: 900
+    fc_p: [1000, 3000]
+    A_p: [0, -20, -30]
+    fc_m: [700, 100]
+    A_m: [0, 0, 0]
+  initial_conditions:
+    fref: 1000
+    #fc_p: [  3000, 4000, 4700,   5000]
+    #A_p: [0,0 ,0,0,-40]
+    #fc_p: [  3000,    5000]
+    fc_p: [  1500, 2000]
+    #A_p: [0,0 ,40]
+    A_p: [0,0, -80]
+    #fc_m: [700, 20]
+    fc_m: [500, 50]
+    #A_m: [0,0, 40 ]
+    A_m: [0,0, 80 ]
+  optimization: 
+    #backtracking_enabled: True
+    max_iter: 100
+    grad_clip: 1
+    #alpha: 0.2
+    #beta: 0.5
+    tol: [1e-1, 1e-1]
+    #mu: [1000, 10]
+    #lr: 10
+    #weights: [10, 0.1]
+    clamp_fc: True
+    clamp_A: True
+    block_low_freq: False
+    only_negative_Ap: False
+    last_slope_fixed: True #if True, the last slope of A_p is fixed to -40dB/oct
+    first_slope_fixed: True #if True, the last slope of A_m is fixed to 40dB/oct
+       
+collapse_regularization:
+  use: True
+  beta: 0.1 #the smaller the fatter the loss, so more regularization
+  gamma: 1
+  lambda_reg: 10 #this is the weight of the regularization term (the cost is normalized between 0 and 1)
+
+       
+
+denoiser:
+  callable: 'networks.denoiser.MultiStage_denoise'
+  checkpoint: '/scratch/work/molinee2/projects/ddpm/blind_bwe_diffusion/experiments_denoiser/pretrained_model/checkpoint_denoiser'
+  sample_rate_denoiser: 22050
+  segment_size: 5 #in seconds
+  activation: "elu"
+  use_csff: False
+  use_SAM: True
+  use_cam: False
+  use_fam: False
+  use_fencoding: True
+  use_tdf: False
+  use_alttdfs: False
+  num_tfc: 3
+  num_stages: 2
+  depth: 6
+  f_dim: 513 #hardcoded, depends on the stft window
+  stft_win_size: 1024
+  stft_hop_size: 256
+
+   
+complete_recording:
+  path: /scratch/work/molinee2/datasets/vocal_restoration/transfer_231829_files_e9c6e7d5_separated/htdemucs/WCD-008_17_denoised_lpf/vocals.wav
+  use_denoiser: False
+  SNR_extra_noise: "None"
+  n_segments_blindstep: 1
+  ix_start: 15 #in seconds
+  #std: 0.07 #normalizationout level 
+  std: 1  #normalizationout level 
+  inpaint_DC: False #use data consistency for inpainting (not tested yet)
+  inpaint_RG: True #use restoration guidance for inpainting (no extra cost as RG is already used for BWE) 
+
+wandb:
+  use: False
+  entity: "eloimoliner"
+  project: "blind_restoration"
+  run_name: "fc_A"
+  heavy_log_interval: 10

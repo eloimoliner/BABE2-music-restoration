@@ -1,0 +1,74 @@
+exp_name: "44k_8s"
+
+trainer_callable: "training.trainer.Trainer"
+
+finetuning: True
+
+lossmlp:
+  use: False
+  rff_dim: 32
+
+wandb:
+  entity: "eloimoliner"
+  project: "A-diffusion"
+
+model_dir: None
+#main options
+#related to optimization
+optimizer:
+  type: "adam" #only "adam implemented
+  beta1: 0.9
+  beta2: 0.999
+  eps: 1e-8 #for numerical stability, we may need to modify it if usinf fp16
+  
+lr: 2e-4 #            help='Learning rate',
+lr_rampup_it: 100 #,  help='Learning rate rampup duration'
+
+#for lr scheduler (not noise schedule!!) TODO (I think)
+scheduler_step_size: 60000
+scheduler_gamma: 0.8
+
+
+
+
+batch: 4 
+batch_gpu: 4 
+num_accumulation_rounds: 1 
+
+bench: True 
+num_workers: 4  
+
+# I/O-related. moved to logging
+seed: 42 
+resume: True
+base_checkpoint: "/scratch/work/molinee2/projects/BABE2/experiments/137/44k_8s-325000.pt"
+resume_checkpoint: None
+
+
+#audio data related
+sample_rate: 44100
+audio_len: 262144
+stereo: False 
+
+#training
+use_cqt_DC_correction: False #if True, the loss will be corrected for the DC component and the nyquist frequency. This is important because we are discarding the DC component and the nyquist frequency in the cqt
+
+#ema_rate: "0.9999"  # comma-separated list of EMA values
+ema_rate: 0.9999  #unused
+ema_rampup: 10000  #linear rampup to ema_rate   #help='EMA half-life' 
+
+#gradient clipping
+use_grad_clip: True
+max_grad_norm: 1
+
+restore : False
+checkpoint_id: None
+
+
+LTAS:
+  calculate: True
+  num_batches: 100
+  nfft: 4096
+  win_length: 4096
+  hop_length: 1024
+  Noct: 3

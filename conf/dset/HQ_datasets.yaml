@@ -1,0 +1,28 @@
+name: "singing_voice"
+type: "audio"
+callable: "datasets.singing_voice_datasets.MultiDataset"
+#path: "/u/25/molinee2/unix/datasets/MusicNet/train"
+path: "/scratch/elec/t412-asp/audio_datasets/singing_voice/DAMP-VSEP"
+#path_csv: ["/scratch/elec/t412-asp/audio_datasets/singing_voice/DAMP-VSEP/vocal_files.csv", "/scratch/elec/t412-asp/audio_datasets/singing_voice/ACAPELLA/acapella/paths.csv"]
+path_csv: ["/scratch/elec/t412-asp/audio_datasets/singing_voice/OpenSinger/output.csv", "/scratch/elec/t412-asp/audio_datasets/singing_voice/opencpop/output.csv",  "/scratch/elec/t412-asp/audio_datasets/singing_voice/m4singer/output.csv",   "/scratch/elec/t412-asp/audio_datasets/singing_voice/nus-smc-corpus_48/output.csv",    "/scratch/elec/t412-asp/audio_datasets/singing_voice/CSD/output.csv",      "/scratch/elec/t412-asp/audio_datasets/singing_voice/PJS_corpus_ver1.1/output.csv"]
+
+priorities: [ 0.5, 6, 1, 6, 6,  2]
+
+overfit: False
+
+load_len: 552552
+
+normalize: True
+
+apply_random_gain: True
+gain_range: [-3, 3]
+      
+test:
+   callable: "datasets.singing_voice_datasets.AudioFolderDatasetTest_2"
+   #path: "/u/25/molinee2/unix/datasets/MusicNet/train"
+   #path: "/scratch/elec/t412-asp/audio_datasets/CocoChorales/cocochorales_full_v1_zipped/strings/test"
+   path: "/scratch/elec/t412-asp/audio_datasets/singing_voice/opencpop/test"
+   stereo: False
+   num_samples: 4
+   batch_size: 1
+
