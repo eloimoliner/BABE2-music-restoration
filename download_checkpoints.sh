@@ -2,6 +2,8 @@
 
 #script to download the trained checkpoitntrained checkpoints
 
+mkdir experiments
+
 cd experiments
 
 #MAESTRO (piano)

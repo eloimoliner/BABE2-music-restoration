@@ -422,12 +422,13 @@ class Trainer():
         """
         Do the heavy logging here. This will be called every 10000 iterations or so
         """
-        if self.do_test:
+        pass
+        #if self.do_test:
 
-            if self.latest_checkpoint is not None:
-                self.tester.load_checkpoint(self.latest_checkpoint)
+            #if self.latest_checkpoint is not None:
+            #    self.tester.load_checkpoint(self.latest_checkpoint)
 
-            preds=self.tester.sample_unconditional()
+            #preds=self.tester.sample_unconditional()
 
 
     def training_loop(self):

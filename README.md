@@ -25,11 +25,26 @@ Listen to our [audio samples](http://research.spa.aalto.fi/publications/papers/d
 
 ## Restore a recording with a pretrained model
 
-TODO
+The pretrained checkpoints used in the paper experiments are available  [here](http://research.spa.aalto.fi/publications/papers/dafx-babe2/checkpoints/)
+
+```bash
+python test.py  --config-name=conf_singing_voice.yaml tester=singer_evaluator_BABE2 tester.checkpoint="path/to/checkpoint.pt" id="BABE2_restored" tester.evaluation.single_recording="path/to/recording.wav"
+```
 
 
 ## Train or fine-tune your own diffusion model
 
-TODO
+#Train a model from scratch
+
+```bash
+python train.py  --config-name=conf_piano.yaml model_dir="experiments/piano"
+```
+
+#Fine-tune from pre-trained model
+
+```bash
+python train.py  --config-name=conf_piano.yaml  model_dir="experiments/piano_finetuned" exp.batch=$batch_size exp.finetuning=True exp.base_checkpoint="/link/to/pretrained/checkpoint.pt" 
+```
+
 
 
