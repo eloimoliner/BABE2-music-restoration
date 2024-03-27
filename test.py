@@ -38,7 +38,15 @@ def _main(args):
     if args.tester.checkpoint != 'None':
         ckpt_path= args.tester.checkpoint
         print("Loading checkpoint:",ckpt_path)
-        tester.load_checkpoint(ckpt_path) 
+
+        try:
+            tester.load_checkpoint(ckpt_path) 
+        except:
+            #maybe it is a relative path
+            #find my path
+            path=os.path.dirname(__file__)
+            print(path)
+            tester.load_checkpoint(os.path.join(path,ckpt_path))
         tester.setup_sampler()
     else:
         print("trying to load latest checkpoint")

@@ -6,7 +6,7 @@ import torch
 #import torchaudio
 torch.pi = torch.acos(torch.zeros(1)).item() * 2 # which is 3.1415927410125732
 
-from cqt_nsgt_pytorch import CQT_nsgt
+from utils.cqt_nsgt_pytorch import CQT_nsgt
 import torchaudio
 import einops
 import math

@@ -10,40 +10,19 @@ import librosa
 def smooth_LTAS(LTAS,f,Noct=1):
     #based on https://github.com/IoSR-Surrey/MatlabToolbox/blob/4bff1bb2da7c95de0ce2713e7c710a0afa70c705/%2Biosr/%2Bdsp/smoothSpectrum.m
 
-    #apply Gaussian smoothing per octave band
-    #function g = gauss_f(f_x,F,Noct)
-    #% GAUSS_F calculate frequency-domain Gaussian with unity gain
-    #% 
-    #%   G = GAUSS_F(F_X,F,NOCT) calculates a frequency-domain Gaussian function
-    #%   for frequencies F_X, with centre frequency F and bandwidth F/NOCT.
 
-    #    sigma = (F/Noct)/pi; % standard deviation
-    #    g = exp(-(((f_x-F).^2)./(2.*(sigma^2)))); % Gaussian
-    #    g = g./sum(g); % normalise magnitude
-
-    #end
     def gauss_f(f_x,F,Noct):
         sigma = (F/Noct)/np.pi
         g = torch.exp(-(((f_x-F)**2)/(2*(sigma**2))))
         g = g/torch.sum(g)
         return g
 
-    #x_oct = X; % initial spectrum
 
-    #if Noct > 0 % don't bother if no smoothing
-    #    for i = find(f>0,1,'first'):length(f)
-    #        g = gauss_f(f,f(i),Noct);
-    #        x_oct(i) = sum(g.*X); % calculate smoothed spectral coefficient
-    #    end
-    #    % remove undershoot when X is positive
-    #    if all(X>=0)
-    #        x_oct(x_oct<0) = 0;
-    #    end
-    #end
     x_oct = LTAS.clone()
     if Noct>0:
         for i in range(1,len(f)):
             g = gauss_f(f,f[i],Noct)
+            g=g.to(LTAS.device)
             x_oct[i] = torch.sum(g*LTAS)
         if torch.all(LTAS>=0):
             x_oct[x_oct<0] = 0
@@ -499,23 +478,7 @@ def apply_filter_and_norm_STFTmag_fweighted(X,Xref, H, freq_weight="linear"):
     norm=torch.linalg.norm(X.reshape(-1)-Xref.reshape(-1),ord=2)
     return norm
 
-def plot_filter(ref_filter, est_filter, NFFT=1024, fs=44100):
-    f=torch.fft.rfftfreq(NFFT, d=1/fs).to(ref_filter.device)
-    Href=design_filter(ref_filter[0],ref_filter[1], f)
-    H=design_filter(est_filter[0],est_filter[1], f)
-    fig=px.line(x=f.cpu(),y=20*torch.log10(H.cpu().detach()), log_x=True , title='Frequency response of a low pass filter', labels={'x':'Frequency (Hz)', 'y':'Magnitude (dB)'})
-    #plot the reference frequency response
-    fig.add_scatter(x=f.cpu(),y=20*torch.log10(Href.cpu().detach()), mode='lines', name='Reference')
-    return fig
 
-def plot_single_filter_BABE(est_filter, freqs):
-    f=freqs
-    H=design_filter_BABE( est_filter, f)
-    fig=px.line(x=f.cpu(),y=20*torch.log10(H.cpu().detach()), log_x=True , title='Frequency response of a low pass filter', labels={'x':'Frequency (Hz)', 'y':'Magnitude (dB)'})
-    #plot the reference frequency response
-    #define range
-    fig.update_yaxes(range=[-100, 30])
-    return fig
 def plot_single_filter_BABE2_3(est_filter, freqs):
     f=freqs
     H=design_filter_3( est_filter, f)
@@ -524,73 +487,3 @@ def plot_single_filter_BABE2_3(est_filter, freqs):
     #define range
     fig.update_yaxes(range=[-100, 30])
     return fig
-def plot_single_filter_BABE2(fref,est_filter, freqs):
-    f=freqs
-    H=design_filter_2(fref, est_filter, f)
-    fig=px.line(x=f.cpu(),y=20*torch.log10(H.cpu().detach()), log_x=True , title='Frequency response of a low pass filter', labels={'x':'Frequency (Hz)', 'y':'Magnitude (dB)'})
-    #plot the reference frequency response
-    #define range
-    fig.update_yaxes(range=[-100, 30])
-    return fig
-
-
-def animation_filter(path, data_filters ,t,NFFT=1024, fs=44100, name="animation_filter",NT=15 ):
-    '''
-    plot an animation of the reverse diffusion process of filters
-    args:
-        path: path to save the animation
-        x: input audio (N,T)
-        t: timesteps (sigma)
-        name: name of the animation
-    '''
-    #print(noisy.shape)
-    f=torch.fft.rfftfreq(NFFT, d=1/fs)
-    Nsteps=data_filters.shape[0]
-    numsteps=min(Nsteps,NT) #hardcoded, I'll probably need more!
-    tt=torch.linspace(0, Nsteps-1, numsteps)
-    i_s=[]
-    allX=None
-    for i in tt:
-        i=int(torch.floor(i))
-        i_s.append(i)
-        X=design_filter(data_filters[i,0],data_filters[i,1], f) # (513,)
-        X=X.unsqueeze(0) #(1,513)
-        if allX==None:
-             allX=X
-        else:
-             allX=torch.cat((allX,X), 0)
-
-    #allX shape is ( 513, numsteps)
-    sigma=t[i_s]
-    #x=x.squeeze(1)# (100,19)
-    print(allX.shape, f.shape, sigma.shape)
-    f=f.unsqueeze(0).expand(allX.shape[0], -1).reshape(-1)
-    sigma=sigma.unsqueeze(-1).expand(-1, allX.shape[1]).reshape(-1)
-    allX=allX.reshape(-1)
-    print(allX.shape, f.shape, sigma.shape)
-    df=pd.DataFrame(
-        {
-            "f": f.cpu().numpy(),
-            "h": 20*torch.log10(allX.cpu()).numpy(),
-            "sigma": sigma.cpu().numpy()
-        }
-    )
-    fig=px.line(df, x="f",y="h", animation_frame="sigma", log_x=True) #I need
-    path_to_plotly_html = path+"/"+name+".html"
-    
-    fig.write_html(path_to_plotly_html, auto_play = False)
-
-    return fig
-
-
-def extract_envelope(x, win_len=512, stride=1):
-    #search for nan values
-    #assert torch.isnan(x).any()==False, "x contains nan values"
-    x=torch.nn.functional.pad(x.abs(), (win_len//2, win_len//2-1), mode='reflect')
-        #do not use unfold here because it is not compatible with 1d tensors
-    #assert torch.isnan(x).any()==False, "x contains nan values"
-    x=torch.nn.functional.avg_pool1d(x, kernel_size=win_len, stride=stride)
-    #assert torch.isnan(x).any()==False, "x contains nan values"
-    x=torch.sqrt(x)
-    assert torch.isnan(x).any()==False, "x contains nan values"
-    return x

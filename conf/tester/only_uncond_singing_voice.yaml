@@ -5,8 +5,8 @@ type: "blind"
 name: "tester" #same as the file name, try to do that for all testers
 
 #callable: 'testing.blind_bwe_tester.BlindTester'
-callable: 'testing.singer_evaluator.Evaluator'
-sampler_callable: 'testing.blind_bwe_sampler_BABE2.BlindSampler'
+callable: 'testing.evaluator.Evaluator'
+sampler_callable: 'testing.sampler_BABE2.BlindSampler'
 
 modes: ['unconditional'] #modes to test
 
