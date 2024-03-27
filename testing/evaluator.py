@@ -59,7 +59,7 @@ class Evaluator():
             LTAS_smooth=LTAS_smooth*correction
             LTAS_smooth=LTAS_smooth.to(recording.device)
 
-            LTAS_y, std=blind_bwe_utils.compute_LTAS(x=recording.clone(), sample_rate=self.args.exp.sample_rate, normalize=0.07 ,nfft=nfft,win_length=nfft//2, hop_length=nfft//4)
+            LTAS_y, std=blind_bwe_utils.compute_LTAS(x=recording.clone(), sample_rate=self.args.exp.sample_rate, normalize=1 ,nfft=nfft,win_length=nfft//2, hop_length=nfft//4)
 
             LTAS_y_smooth=blind_bwe_utils.smooth_LTAS(LTAS_y, freqs, Noct=3)*correction.to(LTAS_y.device)
 

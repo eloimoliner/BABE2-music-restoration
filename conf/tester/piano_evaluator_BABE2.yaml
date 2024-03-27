@@ -87,15 +87,6 @@ diff_params:
   Stmin: 0
   Stmax: 50
 
-initialization:
-  type: "zeros"
-  sigma_init: 0.01
-
-autoregressive:
-  overlap: 0.25
-  num_samples: 4
-
-sampler: "stochastic" #wether deterministic or stochastic, unused as Scurn defineds the stochasticity
 
 bandwidth_extension:
   sigma_observations: 0.00 #adding noise is critical!
