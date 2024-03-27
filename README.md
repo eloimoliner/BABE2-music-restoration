@@ -6,14 +6,8 @@ Official repository of the paper:
 > E. Moliner, M. Turunen, F. Elvander and V. Välimäki,, "A Diffusion-Based Generative Equalizer for Music Restoration", submitted to DAFx24, Mar, 2022
 
 
-Historical music restoration examples are available at: 
-\href{http://research.spa.aalto.fi/publications/papers/dafx-babe2/}{research.spa.aalto.fi/publications/papers/dafx-babe2/}.
+Listen to our [audio samples](http://research.spa.aalto.fi/publications/papers/dafx-babe2/)
 
-
-This paper has been submitted for publication in *Some Journal*.
-
-> Brief description of what this paper is about (2-3 sentences). Include a
-> figure as well with the main result of your paper.
 
 ![](manuscript/figures/hawaii-trend.png)
 
