@@ -11,7 +11,7 @@ Listen to our [audio samples](http://research.spa.aalto.fi/publications/papers/d
 
 ![](manuscript/figures/hawaii-trend.png)
 
-*Caption for the example figure with the main results.*
+
 ![alt text](http://research.spa.aalto.fi/publications/papers/dafx-babe2/media/pipeline.png)
 
 ## Abstract
