@@ -34,13 +34,13 @@ python test.py  --config-name=conf_singing_voice.yaml tester=singer_evaluator_BA
 
 ## Train or fine-tune your own diffusion model
 
-#Train a model from scratch
+Train a model from scratch
 
 ```bash
 python train.py  --config-name=conf_piano.yaml model_dir="experiments/piano"
 ```
 
-#Fine-tune from pre-trained model
+Fine-tune from pre-trained model
 
 ```bash
 python train.py  --config-name=conf_piano.yaml  model_dir="experiments/piano_finetuned" exp.batch=$batch_size exp.finetuning=True exp.base_checkpoint="/link/to/pretrained/checkpoint.pt" 
