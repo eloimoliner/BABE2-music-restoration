@@ -1,9 +1,9 @@
 # A Diffusion-Based Generative Equalizer for Music Restoration
 
-by
-Author 1,
-Author 2,
-etc
+Eloi Moliner,
+Maija Turunen,
+Filip Elvander,
+Vesa Välimäki
 
 > This is a template for papers that use Python code and Jupyter notebooks to
 > generate their results (though it can be adapted to use other technologies).
