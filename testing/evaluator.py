@@ -249,7 +249,7 @@ class Evaluator():
                         mask=result_mask[ix_start[i]:ix_end[i]].clone()
                         mask=mask.to(self.device)
                         rid=False
-                        out=self.sampler.predict_blind_bwe_AR(y, y_masked,rid=rid,  test_filter_fit=False, compute_sweep=False, mask=mask, x_init=x_seg_init if self.args.tester.evaluation.LTAS_init else None)
+                        out=self.sampler.predict_blind_bwe_AR(y, y_masked, mask=mask, x_init=x_seg_init if self.args.tester.evaluation.LTAS_init else None)
                         pred, estimated_filter=out
                         estimated_filters.append(estimated_filter)
                         

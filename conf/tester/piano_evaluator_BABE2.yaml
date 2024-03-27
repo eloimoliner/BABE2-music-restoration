@@ -45,7 +45,6 @@ unconditional:
 
 posterior_sampling:
   xi: 1.0 # ) (between 0.4 and 0.8a for l2_sum)
-  rec_distance: "l2_sum" #or "multiresSTFT"
 
   annealing_y:
     use: True
@@ -232,16 +231,6 @@ denoiser:
   stft_hop_size: 256
 
    
-complete_recording:
-  path: /scratch/work/molinee2/datasets/vocal_restoration/WCD-008_03/piano.wav
-  use_denoiser: False
-  SNR_extra_noise: "None"
-  n_segments_blindstep: 2
-  ix_start: 12 #in seconds
-  std: 0.1 #normalizationout level 
-  overlap: 0.25 #in seconds
-  inpaint_DC: False #use data consistency for inpainting (not tested yet)
-  inpaint_RG: True #use restoration guidance for inpainting (no extra cost as RG is already used for BWE) 
 wandb:
   use: False
   entity: "eloimoliner"
