@@ -12,7 +12,7 @@ import soundfile as sf
 
 class Evaluator():
     def __init__(
-        self, args=None, network=None, diff_params=None, test_set=None, device=None, it=None
+        self, args=None, network=None, diff_params=None,  device=None, it=None
     ):
         self.args=args
         self.network=torch.compile(network)

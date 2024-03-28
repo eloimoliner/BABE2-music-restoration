@@ -1,0 +1,13 @@
+name: "vocalset"
+type: "audio"
+callable: "datasets.custom_datasets.AudioSmallFolderDataset"
+path: "/path/to/dataset"
+
+overfit: False
+
+sigma_data: "calculate"
+
+apply_random_gain: True
+gain_range: [-3, 3]
+
+

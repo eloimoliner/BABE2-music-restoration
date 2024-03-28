@@ -17,12 +17,3 @@ normalize: True
 apply_random_gain: True
 gain_range: [-3, 3]
       
-test:
-   callable: "datasets.singing_voice_datasets.AudioFolderDatasetTest_2"
-   #path: "/u/25/molinee2/unix/datasets/MusicNet/train"
-   #path: "/scratch/elec/t412-asp/audio_datasets/CocoChorales/cocochorales_full_v1_zipped/strings/test"
-   path: "/scratch/elec/t412-asp/audio_datasets/singing_voice/opencpop/test"
-   stereo: False
-   num_samples: 4
-   batch_size: 1
-

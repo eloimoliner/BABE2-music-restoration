@@ -15,7 +15,3 @@ load_len: 405000
 apply_random_gain: True
 gain_range: [-3, 3]
 
-test:
-  callable: "datasets.maestro_dataset.MaestroDatasetTestChunks"
-  num_samples: 8
-  batch_size: 1

@@ -54,12 +54,12 @@ def setup_optimizer(args, network):
     optimizer = torch.optim.Adam(network.parameters(), lr=args.exp.lr, betas=(args.exp.optimizer.beta1, args.exp.optimizer.beta2), eps=args.exp.optimizer.eps)
     return optimizer
 
-def setup_tester(args, network=None, diff_params=None, test_set=None, device="cpu"):
+def setup_tester(args, network=None, diff_params=None,  device="cpu"):
     assert network is not None
     assert diff_params is not None
     if args.tester.do_test:
         # setuo sampler for making demos during training
-        sampler = dnnlib.call_func_by_name(func_name=args.tester.callable, args=args, network=network, test_set=test_set, diff_params=diff_params, device=device)
+        sampler = dnnlib.call_func_by_name(func_name=args.tester.callable, args=args, network=network,  diff_params=diff_params, device=device)
         return sampler
     else:
         return None
