@@ -22,6 +22,7 @@ This research represents an advancement in the practical restoration of historic
 
 Listen to our [audio samples](http://research.spa.aalto.fi/publications/papers/dafx-babe2/)
 
+Read the pre-print in [arXiv](https://arxiv.org/abs/2403.18636)
 
 ## Restore a recording with a pretrained model
 
