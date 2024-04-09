@@ -32,6 +32,14 @@ The pretrained checkpoints used in the paper experiments are available  [here](h
 python test.py  --config-name=conf_singing_voice.yaml tester=singer_evaluator_BABE2 tester.checkpoint="path/to/checkpoint.pt" id="BABE2_restored" tester.evaluation.single_recording="path/to/recording.wav"
 ```
 
+## Test unconditional sampling
+
+Generate an unconditional 
+
+```bash
+python test.py  --config-name=conf_piano.yaml tester=only_uncond_maestro tester.checkpoint="path/to/checkpoint.pt" id="BABE2" tester.modes=["unconditional"]
+```
+
 
 ## Train or fine-tune your own diffusion model
 

@@ -40,7 +40,7 @@ evaluation:
 
 
 unconditional:
-  num_samples: 8
+  num_samples: 1
   audio_len: 184184
 
 posterior_sampling:
@@ -77,7 +77,7 @@ diff_params:
   same_as_training: False
   sigma_data: 0.063 #default for maestro
   sigma_min: 4e-5
-  sigma_max: 1
+  sigma_max: 10
   P_mean: -1.2 #what is this for?
   P_std: 1.2 #ehat is this for?
   ro: 13

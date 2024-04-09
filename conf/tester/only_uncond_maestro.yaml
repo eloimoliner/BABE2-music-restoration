@@ -22,24 +22,17 @@ base_checkpoint: None
 #checkpoint_operator: "train_filters_diffusion_larger-250000.pt"
 
 unconditional:
-  num_samples: 4
-  audio_len: 262144
+  num_samples: 1
+  audio_len: 184184
 
 posterior_sampling:
-  xi: 1.0 # ) (between 0.4 and 0.8a for l2_sum)
-  lr: 0.1
-  rec_distance: "l2_sum" #or "multiresSTFT"
-  rec_distance_operator: "l2_hp" #or "multiresSTFT"
-  prior_distance: "RED" #or "multiresSTFT"
-  weight_rec_loss: 1 #use 0.00005 for multi-res STFT
-  weight_rec_loss_operator: 1 #use 0.00005 for multi-res STFT
+  xi: 0 # ) (between 0.4 and 0.8a for l2_sum)
+
   annealing_y:
     use: True
     mode: "fixed"
     #mode: "fixed"
     sigma_min: 0.25
-  multibatch:
-    n_batch: 1
   grad_clipping: False
   clip_value: 0.5
   data_consistency: False #always False for blind bwe
@@ -50,10 +43,9 @@ posterior_sampling:
     use_multires: False
     nfft: 2048
   norm: 2  #"smoothl1" #1 or 2 or "smoothl1"
-  smoothl1_beta: 1
   SNR_observations: "None"  
   sigma_observations: None 
-  start_sigma: 0.5
+  start_sigma: "None"
   freq_weighting: "None"
   freq_weighting_filter: "sqrt"
   normalization: "grad_norm"
@@ -197,3 +189,11 @@ complete_recording:
   overlap: 0.25 #in seconds
   inpaint_DC: True #use data consistency for inpainting (not tested yet)
   inpaint_RG: True #use restoration guidance for inpainting (no extra cost as RG is already used for BWE) 
+
+
+wandb:
+  use: False
+  entity: "eloimoliner"
+  project: "blind_restoration"
+  run_name: "fc_A"
+  heavy_log_interval: 10

@@ -499,17 +499,13 @@ class BlindSampler():
     ):
         self.y=None
         self.degradation=None
-        return self.predict(shape, device)
+        self.reference=None
+        #self.args.tester.posterior_sampling.xi=0    #just in case
+        #self.args.tester.posterior_sampling.start_sigma="None"    #just in case
+        self.start_sigma=None
+        self.xi=0
+        return self.predict(shape=shape, device=device, conditional=False)
 
-    def predict_resample(
-        self,
-        y,  #observations (lowpssed signal) Tensor with shape ??
-        shape,
-        degradation, #lambda function
-    ):
-        self.degradation=degradation 
-        self.y=y
-        return self.predict(shape, y.device)
 
 
     def predict_conditional(
@@ -517,7 +513,8 @@ class BlindSampler():
         y,  #observations (lowpssed signal) Tensor with shape ??
         x_init=None
     ):
-        return self.predict(y,  blind=False, x_init=x_init)
+        self.y=y
+        return self.predict(shape=y.shape,device=y.device,  blind=False, x_init=x_init)
 
   
     def denoised2score(self,  x_d0, x, t):
@@ -582,7 +579,7 @@ class BlindSampler():
 
         #self.operator.optimize_params(denoised_estimate, y)
 
-    def step(self, x, y, t_i, t_i_1, gamma_i, blind=False): 
+    def step(self, x, t_i, t_i_1, gamma_i, blind=False, y=None): 
 
         if self.args.tester.posterior_sampling.SNR_observations !="None":
             snr=10**(self.args.tester.posterior_sampling.SNR_observations/10)
@@ -592,7 +589,6 @@ class BlindSampler():
             #print(y.shape, sigma.shape)
             y=y+sigma*torch.randn(y.shape).to(y.device)
             
-        print("y", y.std())
 
         x_hat, t_hat=self.move_timestep(x, t_i, gamma_i, self.diff_params.Snoise)
 
@@ -605,11 +601,16 @@ class BlindSampler():
         if blind:
             self.fit_params(x_den_2, y)
 
-        rec_grads, rec_loss=self.get_rec_grads(x_den, y, x_hat, t_hat)
+        if self.args.tester.posterior_sampling.xi>0 and y is not None:
+            rec_grads, rec_loss=self.get_rec_grads(x_den, y, x_hat, t_hat)
+        else:
+            #adding this so that the code does not crash
+            rec_loss=0
+            rec_grads=0
 
         x_hat.detach_()
-
         uncond_score=self.denoised2score(x_den_2, x_hat, t_hat)
+
         score=uncond_score-rec_grads
 
         d=-t_hat*score
@@ -631,7 +632,11 @@ class BlindSampler():
             if blind:
                 self.fit_params(x_den_2, y)
 
-            rec_grads, rec_loss =self.get_rec_grads(x_den, y, x_prime, t_prime)
+            if self.xi>0 and y is not None:
+                rec_grads, rec_loss =self.get_rec_grads(x_den, y, x_prime, t_prime)
+            else:
+                rec_loss=0
+                rec_grads=0
 
             x_prime.detach_()
 
@@ -648,7 +653,7 @@ class BlindSampler():
             #first order Euler step
             x=x_hat+h*d
 
-        return x, x_den_2, rec_loss, score.norm(), rec_grads.norm()
+        return x, x_den_2, rec_loss, score, rec_grads
 
     def predict_blind_bwe_AR(
         self,
@@ -668,7 +673,8 @@ class BlindSampler():
 
         y=y.unsqueeze(0)
 
-        return self.predict(y, blind=True, x_init=x_init)
+        self.y=y
+        return self.predict(shape=y.shape,device=y.device, blind=True, x_init=x_init)
 
     def predict_blind_bwe(
         self,
@@ -678,24 +684,29 @@ class BlindSampler():
         ):
         self.operator=LPFOperator(self.args, y.device)
         self.reference=reference
-        return self.predict(y,  blind=True, x_init=x_init)
+        self.y=y
+        return self.predict(shape=y.shape, device=y.device,  blind=True, x_init=x_init)
 
 
     def predict(
         self,
-        y,  #observations (lowpssed signal) Tensor with shape (L,)
+        shape=None,  #observations (lowpssed signal) Tensor with shape (L,)
+        device=None,
         blind=False,
-        x_init=None
+        x_init=None,
+        conditional=True
         ):
+        if not conditional:
+            self.y=None
 
         if self.args.tester.wandb.use:
             self.setup_wandb()
 
 
         #get shape and device from the observations tensor
-        self.y=y
-        shape=y.shape
-        device=y.device
+        if shape is None:
+            shape=self.y.shape
+            device=self.y.device
 
         #initialization
         if self.start_sigma is None:
@@ -703,13 +714,13 @@ class BlindSampler():
             x=self.diff_params.sample_prior(shape, t[0]).to(device)
         else:
             #get the noise schedule
-            t = self.diff_params.create_schedule_from_initial_t(self.start_sigma,self.nb_steps).to(y.device)
+            t = self.diff_params.create_schedule_from_initial_t(self.start_sigma,self.nb_steps).to(self.y.device)
             #sample from gaussian distribution with sigma_max variance
             if x_init is not None:
                 x = x_init.to(device) + self.diff_params.sample_prior(shape,t[0]).to(device)
             else:
                 print("using y as warm init")
-                x = y + self.diff_params.sample_prior(shape,t[0]).to(device)
+                x = self.y + self.diff_params.sample_prior(shape,t[0]).to(device)
 
         gamma=self.diff_params.get_gamma(t).to(device)
 
@@ -730,7 +741,11 @@ class BlindSampler():
         for i in tqdm(range(0, self.nb_steps, 1)):
             self.step_count=i
 
-            x, x_den, rec_loss, score_norm, lh_socore_norm =self.step(x, y, t[i], t[i+1], gamma[i], blind=blind)
+            out=self.step(x, t[i], t[i+1], gamma[i], blind=blind, y=self.y)
+            x, x_den, rec_loss, score, lh_score =out
+            if self.y is not None:
+                score_norm=score.norm()
+                lh_socore_norm=lh_score.norm()
 
             if self.args.tester.wandb.use:
                 self.wandb_run.log({"rec_loss": rec_loss, "score_norm": score_norm, "lh_socore_norm": lh_socore_norm}, step=i, commit=False)

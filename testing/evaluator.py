@@ -248,7 +248,6 @@ class Evaluator():
                         y_masked=y_masked.to(self.device)
                         mask=result_mask[ix_start[i]:ix_end[i]].clone()
                         mask=mask.to(self.device)
-                        rid=False
                         out=self.sampler.predict_blind_bwe_AR(y, y_masked, mask=mask, x_init=x_seg_init if self.args.tester.evaluation.LTAS_init else None)
                         pred, estimated_filter=out
                         estimated_filters.append(estimated_filter)
@@ -299,7 +298,7 @@ class Evaluator():
                     result[ix_start_blind[i]:ix_end_blind[i]]=pred[i].cpu()
                     result_mask[ix_start_blind[i]:ix_end_blind[i]]=1
                 #save result    
-                sf.write(os.path.join(path, basename+".reconstructed_"+str(self.args.id)+".wav"), self.args.dset.sigma_data*result.cpu().numpy(), self.args.exp.sample_rate)
+                sf.write(os.path.join(path, basename+".reconstructed_"+str(self.args.id)+".wav"), std_orig*result.cpu().numpy()/self.args.tester.blind_bwe.sigma_norm, self.args.exp.sample_rate)
 
                 for i in range(0, len(segs)):
                     #process segs one by one
@@ -309,8 +308,7 @@ class Evaluator():
                         y_masked=y_masked.to(self.device)
                         mask=result_mask[ix_start[i]:ix_end[i]].clone()
                         mask=mask.to(self.device)
-                        rid=False
-                        out=self.sampler.predict_bwe_AR(y, y_masked, estimated_filter, "BABE2",rid=rid,  test_filter_fit=False, compute_sweep=False, mask=mask)
+                        out=self.sampler.predict_bwe_AR(y, y_masked, estimated_filter,   mask=mask)
                         pred=out
                         
                         print("masks",mask[...,0], mask[...,-1])
@@ -351,13 +349,8 @@ class Evaluator():
     def sample_unconditional(self):
         shape=[self.args.tester.unconditional.num_samples, self.args.tester.unconditional.audio_len]
         #TODO assert that the audio_len is consistent with the model
-        rid=False
-        outputs=self.sampler.predict_unconditional(shape, self.device, rid=rid)
-        if rid:
-            preds, data_denoised, t=outputs
-            fig_animation_sig=utils_logging.diffusion_spec_animation(self.paths["blind_bwe"],data_denoised, t[:-1], self.args.logging.stft,name="unconditional_signal_generation")
-        else:
-            preds=outputs
+        outputs=self.sampler.predict_unconditional(shape, self.device)
+        preds=outputs
 
         self.log_audio(preds*self.args.dset.sigma_data, "unconditional", commit=False)
 
@@ -371,12 +364,15 @@ class Evaluator():
     def log_audio(self,preds, mode:str, commit=False):
         string=mode+"_"+self.args.tester.name
         audio_path=utils_logging.write_audio_file(preds,self.args.exp.sample_rate, string,path=self.args.model_dir)
-        print(audio_path)
-        self.wandb_run.log({"audio_"+str(string): wandb.Audio(audio_path, sample_rate=self.args.exp.sample_rate)},step=self.it, commit=False)
-        #TODO: log spectrogram of the audio file to wandb
-        spec_sample=utils_logging.plot_spectrogram_from_raw_audio(preds, self.args.logging.stft)
+        print("Result stored in: "+audio_path)
+        try:
+            self.wandb_run.log({"audio_"+str(string): wandb.Audio(audio_path, sample_rate=self.args.exp.sample_rate)},step=self.it, commit=False)
+            #TODO: log spectrogram of the audio file to wandb
+            spec_sample=utils_logging.plot_spectrogram_from_raw_audio(preds, self.args.logging.stft)
 
-        self.wandb_run.log({"spec_"+str(string): spec_sample}, step=self.it, commit=commit)
+            self.wandb_run.log({"spec_"+str(string): spec_sample}, step=self.it, commit=commit)
+        except:
+            print("Could not log audio to wandb")
 
     def test(self):
         #self.setup_wandb()

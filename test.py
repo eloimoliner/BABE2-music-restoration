@@ -11,7 +11,11 @@ def _main(args):
     dirname = os.path.dirname(__file__)
     args.model_dir = os.path.join(dirname, str(args.model_dir))
     if not os.path.exists(args.model_dir):
-            raise Exception(f"Model directory {args.model_dir} does not exist")
+        #try to create the directory
+        try:
+            os.makedirs(args.model_dir)
+        except:
+            raise Exception(f"Model directory {args.model_dir} does not exist. I did try to create it but failed. Please create it manually or check that the path is correct.")
 
     args.exp.model_dir=args.model_dir
 
@@ -23,7 +27,7 @@ def _main(args):
     except:
         test_set=None
 
-    tester=setup.setup_tester(args, network=network, diff_params=diff_params, test_set=test_set, device=device) #this will be used for making demos during training
+    tester=setup.setup_tester(args, network=network, diff_params=diff_params,  device=device) #this will be used for making demos during training
     # Print options.
     print()
     print('Training options:')
@@ -56,6 +60,8 @@ def _main(args):
 
 @hydra.main(config_path="conf", config_name="conf")
 def main(args):
+    #set device to gpu 2    
+    torch.cuda.set_device(2)
     _main(args)
 
 if __name__ == "__main__":
