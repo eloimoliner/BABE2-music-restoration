@@ -34,8 +34,6 @@ python test.py  --config-name=conf_singing_voice.yaml tester=singer_evaluator_BA
 
 ## Test unconditional sampling
 
-Generate an unconditional 
-
 ```bash
 python test.py  --config-name=conf_piano.yaml tester=only_uncond_maestro tester.checkpoint="path/to/checkpoint.pt" id="BABE2" tester.modes=["unconditional"]
 ```
