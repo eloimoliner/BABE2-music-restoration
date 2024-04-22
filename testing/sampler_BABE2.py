@@ -380,7 +380,25 @@ class BlindSampler():
         if self.args.tester.filter_out_cqt_DC_Nyq:
             x_hat=self.model.CQTransform.apply_hpf_DC(x_hat)
         return x_hat
+
+    def get_denoised_estimate_CFG(self, x, t_i):
+        
+        input_cond=torch.cat((x, y), dim=1)
+        x_hat_cond=self.diff_params.denoiser(input_cond, self.model, t_i.unsqueeze(-1))
+
+        input_unconditional=torch.cat((x, y*0), dim=1)
+        x_hat_cond=self.diff_params.denoiser(input_unconditional, self.model, t_i.unsqueeze(-1))
+
+        #implementeding CFG here
+        #something like this, check other CFG implementations
+        x_hat=(1+lambda_cfg)*x_hat_cond -lambda_cfg*x_hat_unconditinal
+        
+
+        if self.args.tester.filter_out_cqt_DC_Nyq:
+            x_hat=self.model.CQTransform.apply_hpf_DC(x_hat)
+        return x_hat
     
+
 
     def get_score(self,x, y, t_i):
         if y==None:
