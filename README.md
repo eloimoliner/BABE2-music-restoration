@@ -28,8 +28,6 @@ Read the pre-print in [arXiv](https://arxiv.org/abs/2403.18636)
 
 The pretrained checkpoints used in the paper experiments are available  [here](http://research.spa.aalto.fi/publications/papers/dafx-babe2/checkpoints/)
 
-Note: If you intend to train this version of the model, you'll need to modify the ```"conf_custom.yaml"``` file. Change the paths "/path/to/clean/dataset" and "/path/to/noisy/dataset" to the correct paths of your clean and noisy datasets that will be used for training.
-
 ```bash
 python test.py  --config-name=conf_singing_voice.yaml tester=singer_evaluator_BABE2 tester.checkpoint="path/to/checkpoint.pt" id="BABE2_restored" tester.evaluation.single_recording="path/to/recording.wav"
 ```
@@ -42,6 +40,8 @@ python test.py  --config-name=conf_piano.yaml tester=only_uncond_maestro tester.
 
 
 ## Train or fine-tune your own conditional diffusion model
+
+Note: If you intend to train this version of the model, you'll need to modify the ```"conf_custom.yaml"``` file. Change the paths "/path/to/clean/dataset" and "/path/to/noisy/dataset" to the correct paths of your clean and noisy datasets that will be used for training.
 
 Train a model from scratch (conditional noisy and clean):
 
