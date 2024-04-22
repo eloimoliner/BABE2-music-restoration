@@ -64,10 +64,10 @@ class ConditionalDiffusion(nn.Module):
             noisy = noisy.add_(b.reshape(1, -1, 1))
 
         return clean, noisy
-def loss_function(clean, noisy, model_output, classifier_guidance):
+def loss_function(clean, noisy, model_output, classifier_guidance, lambda_guidance=1.0):
     diff_loss = torch.nn.functional.mse_loss(model_output, clean)
     guidance_loss = torch.nn.functional.mse_loss(model_output, classifier_guidance)
-    total_loss = diff_loss + guidance_loss
+    total_loss = diff_loss + lambda_guidance * guidance_loss
     return total_loss
 
 class Conv2d(torch.nn.Module):
@@ -888,5 +888,4 @@ class CropConcatBlock(nn.Module):
                                         height_diff: (x2_shape[2] + height_diff),
                                         width_diff: (x2_shape[3] + width_diff)]
         x = torch.cat((down_layer_cropped, x),1)
-        return x
-    
+        return x    
