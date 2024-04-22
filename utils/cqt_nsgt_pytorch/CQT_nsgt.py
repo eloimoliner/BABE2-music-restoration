@@ -637,3 +637,4 @@ class CQT_nsgt():
         s = self.nsigtf(c) #messing out with the channels agains...
         return s
 
+
