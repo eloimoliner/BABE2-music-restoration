@@ -174,7 +174,7 @@ class EDM():
         return cin*(x+noise), target, cnoise
 
 
-    def loss_fn(self, net, x):
+    def loss_fn(self, net, x, x_noisy):
         """
         Loss function, which is the mean squared error between the denoised latent and the clean latent
         Args:
@@ -187,7 +187,16 @@ class EDM():
 
         input, target, cnoise= self.prepare_train_preconditioning(x, sigma)
         print("inputs to net", input.shape, cnoise.shape, torch.isnan(input).any(), torch.isnan(cnoise).any())
-        estimate=net(input,cnoise)
+
+        #with p = probability of dropout (for example 20%)
+        import random
+        if random.random() < p/200:
+            #drop out the condiditoner 
+            x_noisy*=0
+        #maybe you also need to scale the noisy input, but not sure
+        #x_noisy*=self.cin(sigma)
+
+        estimate=net(input,x_noisy, cnoise)
         
         error=(estimate-target)
 
