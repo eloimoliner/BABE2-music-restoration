@@ -320,12 +320,12 @@ class Trainer():
         clean_audio, noisy_audio = self.get_batch()
 
         # Obtener la salida del modelo y la guía del clasificador
-        model_output = self.network(noisy_audio, self.diff_params.cnoise(sigma))
-        classifier_guidance = clean_audio
+        #model_output = self.network(noisy_audio, self.diff_params.cnoise(sigma))
+        #classifier_guidance = clean_audio
 
         # Calcular la pérdida total con "Classifier Free Guidance"
-        lambda_guidance = self.args.exp.lambda_guidance
-        error, sigma = self.diff_params.loss_fn(clean_audio, noisy_audio, model_output, classifier_guidance, lambda_guidance)
+        #lambda_guidance = self.args.exp.lambda_guidance
+        error, sigma = self.diff_params.loss_fn(self.network, clean_audio, noisy_audio)
 
         if self.args.exp.lossmlp.use:
             loss_u = self.lossmlp(self.diff_params.cnoise(sigma))
