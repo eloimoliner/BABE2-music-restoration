@@ -306,10 +306,10 @@ class Trainer():
 
     def get_batch(self):
         # load both clean and noisy data batches
-         clean_audio, noisy_audio = next(self.dset)
-         clean_audio = clean_audio.to(self.device).to(torch.float32)
-         noisy_audio = noisy_audio.to(self.device).to(torch.float32)
-         return clean_audio, noisy_audio
+        clean_audio, noisy_audio = next(self.dset)
+        clean_audio = clean_audio.to(self.device).to(torch.float32)
+        noisy_audio = noisy_audio.to(self.device).to(torch.float32)
+        return clean_audio, noisy_audio
     
     def train_step(self):
         # Train step
@@ -318,12 +318,19 @@ class Trainer():
         self.optimizer.zero_grad()
         st_time = time.time()
         clean_audio, noisy_audio = self.get_batch()
-        error, sigma = self.diff_params.loss_fn(self.network, clean_audio, noisy_audio)
+
+        # Obtener la salida del modelo y la guía del clasificador
+        model_output = self.network(noisy_audio, self.diff_params.cnoise(sigma))
+        classifier_guidance = clean_audio
+
+        # Calcular la pérdida total con "Classifier Free Guidance"
+        lambda_guidance = self.args.exp.lambda_guidance
+        error, sigma = self.diff_params.loss_fn(clean_audio, noisy_audio, model_output, classifier_guidance, lambda_guidance)
 
         if self.args.exp.lossmlp.use:
-            loss_u=self.lossmlp(self.diff_params.cnoise(sigma))
-            error_norm=error/(loss_u.exp())+loss_u
-            loss=error_norm.mean()
+            loss_u = self.lossmlp(self.diff_params.cnoise(sigma))
+            error_norm = error / (loss_u.exp()) + loss_u
+            loss = error_norm.mean()
         else:
             loss=error.mean()
 
