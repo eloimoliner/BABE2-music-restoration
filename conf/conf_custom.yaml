@@ -7,6 +7,7 @@ defaults:
   - tester: only_uncond_singing_voice
   - exp: singing_voice_44k_6s
   - logging: base_logging
+  - lambda_guidance: 1.0
 
 model_dir: "experiments/model_dir"
 
