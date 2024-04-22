@@ -375,7 +375,10 @@ class BlindSampler():
         return score
     
     def get_denoised_estimate(self, x, t_i):
-        x_hat=self.diff_params.denoiser(x, self.model, t_i.unsqueeze(-1))
+
+        #assuming you have here some noisy signal y (take care of the message passing)
+
+        x_hat=self.diff_params.denoiser(x,y, self.model, t_i.unsqueeze(-1))
 
         if self.args.tester.filter_out_cqt_DC_Nyq:
             x_hat=self.model.CQTransform.apply_hpf_DC(x_hat)
