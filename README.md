@@ -1,7 +1,7 @@
 # A Diffusion-Based Generative Equalizer for Music Restoration
 
 
-This repository houses the official implementation of BABE-2, an advanced algorithm designed for the enhancement of historical music recordings. 
+This repository aims to create a conditional version of the CQT-Diff+ model while retaining its unconditional features (inpainting and audio generation). At the moment, it is NOT ready for use; this modification is in an Alpha state. The license for this modification is the same as that of the original BABE-2 project.
 
 > E. Moliner, M. Turunen, F. Elvander and V. Välimäki,, "A Diffusion-Based Generative Equalizer for Music Restoration", submitted to DAFx24, Mar, 2022
 
