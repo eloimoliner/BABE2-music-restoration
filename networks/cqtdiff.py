@@ -888,4 +888,5 @@ class CropConcatBlock(nn.Module):
                                         height_diff: (x2_shape[2] + height_diff),
                                         width_diff: (x2_shape[3] + width_diff)]
         x = torch.cat((down_layer_cropped, x),1)
-        return x    
+        return x
+    
