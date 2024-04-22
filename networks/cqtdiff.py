@@ -39,30 +39,37 @@ class Linear(torch.nn.Module):
             x = x.add_(self.bias.to(x.dtype))
         return x
 
-class Conv1d(torch.nn.Module):
-    def __init__(self,
-        in_channels, out_channels, kernel=1, bias=False, dilation=1,
-        init_mode='kaiming_normal', init_weight=1, init_bias=0,
-    ):
+class ConditionalDiffusion(nn.Module):
+    def __init__(self, in_channels, out_channels, kernel=1, bias=False, dilation=1,
+                 init_mode='kaiming_normal', init_weight=1, init_bias=0):
         super().__init__()
         self.in_channels = in_channels
         self.out_channels = out_channels
         self.dilation = dilation
         init_kwargs = dict(mode=init_mode, fan_in=in_channels*kernel, fan_out=out_channels*kernel)
-        self.weight = torch.nn.Parameter(weight_init([out_channels, in_channels, kernel], **init_kwargs) * init_weight) 
-        self.bias = torch.nn.Parameter(weight_init([out_channels], **init_kwargs) * init_bias) if bias else None
+        self.weight = nn.Parameter(weight_init([out_channels, in_channels, kernel], **init_kwargs) * init_weight)
+        self.bias = nn.Parameter(weight_init([out_channels], **init_kwargs) * init_bias) if bias else None
 
-    def forward(self, x):
-        w = self.weight.to(x.dtype) if self.weight is not None else None
-        b = self.bias.to(x.dtype) if self.bias is not None else None
+    def forward(self, clean, noisy):
+        w = self.weight.to(clean.dtype) if self.weight is not None else None
+        b = self.bias.to(clean.dtype) if self.bias is not None else None
         w_pad = w.shape[-1] // 2 if w is not None else 0
-        #f_pad = (f.shape[-1] - 1) // 2 if f is not None else 0
-        #print(x.shape, w.shape)
+
         if w is not None:
-                x = torch.nn.functional.conv1d(x, w, padding="same", dilation=self.dilation)
+            clean = F.conv1d(clean, w, padding="same", dilation=self.dilation)
+            noisy = F.conv1d(noisy, w, padding="same", dilation=self.dilation)
+
         if b is not None:
-            x = x.add_(b.reshape(1, -1, 1))
-        return x
+            clean = clean.add_(b.reshape(1, -1, 1))
+            noisy = noisy.add_(b.reshape(1, -1, 1))
+
+        return clean, noisy
+def loss_function(clean, noisy, model_output, classifier_guidance):
+    diff_loss = torch.nn.functional.mse_loss(model_output, clean)
+    guidance_loss = torch.nn.functional.mse_loss(model_output, classifier_guidance)
+    total_loss = diff_loss + guidance_loss
+    return total_loss
+
 class Conv2d(torch.nn.Module):
     def __init__(self,
         in_channels, out_channels, kernel=(1,1), bias=False, dilation=1,
@@ -882,4 +889,4 @@ class CropConcatBlock(nn.Module):
                                         width_diff: (x2_shape[3] + width_diff)]
         x = torch.cat((down_layer_cropped, x),1)
         return x
-
+    
