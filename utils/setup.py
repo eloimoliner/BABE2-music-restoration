@@ -74,8 +74,4 @@ def setup_trainer(args, dset=None, network=None, optimizer=None, diff_params=Non
     return trainer
     
 
-    
-
-
-
 
