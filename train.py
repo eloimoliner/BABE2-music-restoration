@@ -11,6 +11,9 @@ import copy
 
 def _main(args):
     device=torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    clean_path = args.dset.clean_path
+    noisy_path = args.dset.noisy_path
+    dset = setup.setup_dataset(clean_path, noisy_path, args)
     #assert torch.cuda.is_available()
     #device="cuda"
 
