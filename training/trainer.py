@@ -305,29 +305,20 @@ class Trainer():
                 training_stats.report('error_sigma_'+str(self.sigma_bins[i]),error[idx].mean())
 
     def get_batch(self):
-        #load the data batch
-        if self.args.dset.name == "maestro_allyears":
-            audio, fs = next(self.dset)
-            audio=audio.to(self.device).to(torch.float32)
-            return t_utils.resample_batch(audio, fs, self.args.exp.sample_rate, self.args.exp.audio_len)
-        elif self.args.dset.name == "singing_voice":
-            audio, fs = next(self.dset)
-            audio=audio.to(self.device).to(torch.float32)
-            return t_utils.resample_batch(audio, fs, self.args.exp.sample_rate, self.args.exp.audio_len)
-        else: 
-            audio = next(self.dset)
-            audio=audio.to(self.device).to(torch.float32)
-            #let's hope resampling is not needed
-            return audio
-
+        # load both clean and noisy data batches
+         clean_audio, noisy_audio = next(self.dset)
+         clean_audio = clean_audio.to(self.device).to(torch.float32)
+         noisy_audio = noisy_audio.to(self.device).to(torch.float32)
+         return clean_audio, noisy_audio
+    
     def train_step(self):
         # Train step
         it_start_time = time.time()
         #self.optimizer.zero_grad(set_to_none=True)
         self.optimizer.zero_grad()
-        st_time=time.time()
-        audio=self.get_batch()
-        error, sigma = self.diff_params.loss_fn(self.network, audio)
+        st_time = time.time()
+        clean_audio, noisy_audio = self.get_batch()
+        error, sigma = self.diff_params.loss_fn(self.network, clean_audio, noisy_audio)
 
         if self.args.exp.lossmlp.use:
             loss_u=self.lossmlp(self.diff_params.cnoise(sigma))
@@ -338,13 +329,13 @@ class Trainer():
 
         loss.backward()
 
-        if self.it <= self.args.exp.lr_rampup_it:
-            for g in self.optimizer.param_groups:
-                #learning rate ramp up
-                g['lr'] = self.args.exp.lr * min(self.it / max(self.args.exp.lr_rampup_it, 1e-8), 1)
+    if self.it <= self.args.exp.lr_rampup_it:
+        for g in self.optimizer.param_groups:
+            # learning rate ramp up
+            g['lr'] = self.args.exp.lr * min(self.it / max(self.args.exp.lr_rampup_it, 1e-8), 1)
 
-        if self.args.exp.use_grad_clip:
-            torch.nn.utils.clip_grad_norm_(self.network.parameters(), self.args.exp.max_grad_norm)
+    if self.args.exp.use_grad_clip:
+        torch.nn.utils.clip_grad_norm_(self.network.parameters(), self.args.exp.max_grad_norm)
 
         # Update weights.
         self.optimizer.step()
@@ -354,8 +345,7 @@ class Trainer():
             self.process_loss_for_logging(error, sigma)
 
         it_end_time = time.time()
-        print("it :",self.it, "time:, ",end_time-st_time, "total_time: ",training_stats.report('it_time',it_end_time-it_start_time) ,"loss: ", training_stats.report('loss', loss.item()))
-
+        print("it :", self.it, "time:, ", end_time - st_time, "total_time: ", training_stats.report('it_time', it_end_time - it_start_time), "loss: ", training_stats.report('loss', loss.item()))
 
     def update_ema(self):
         """Update exponential moving average of self.network weights."""
@@ -454,4 +444,4 @@ class Trainer():
             self.it += 1
 
 
-    #----------------------------------------------------------------------------
+    # ----------------------------------------------------------------------------
