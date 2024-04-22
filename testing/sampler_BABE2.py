@@ -10,6 +10,7 @@ import utils.logging as utils_logging
 
 
 class LPFOperator():
+
     def __init__(self, args, device) -> None:
         self.args=args
         self.device=device
@@ -100,8 +101,11 @@ class LPFOperator():
         gamma=self.args.tester.collapse_regularization.gamma
         cost=[torch.exp(-beta*x.abs()**gamma) for x in dist]
         return torch.stack(cost).sum()
-
-
+    
+    def generate_guidance_labels(self, clean_audio):
+    # Convert the clean audio to a one-hot representation
+        clean_audio_one_hot = torch.nn.functional.one_hot(clean_audio).float().to(self.device)
+        return clean_audio_one_hot
     def limit_params(self):
 
         
@@ -147,7 +151,7 @@ class LPFOperator():
         if self.args.tester.blind_bwe.optimization.first_slope_fixed:
             self.params[4][-1]=self.args.tester.blind_bwe.Alim
 
-    def optimizer_func(self, Xden, Y):
+    def optimizer_func(self, x_hat, y, clean_audio):
         """
         Xden: STFT of denoised estimate
         y: observations
@@ -160,9 +164,23 @@ class LPFOperator():
         #    self.params[4][-1]=self.Amax
 
         #print("before design filter", self.params)
-        H=blind_bwe_utils.design_filter_3(self.params, self.freqs, block_low_freq=self.args.tester.blind_bwe.optimization.block_low_freq)
-        return blind_bwe_utils.apply_filter_and_norm_STFTmag_fweighted(Xden, Y, H, self.args.tester.posterior_sampling.freq_weighting_filter)
+        H = blind_bwe_utils.design_filter_3(self.params, self.freqs, block_low_freq=self.args.tester.blind_bwe.optimization.block_low_freq)
+        return blind_bwe_utils.apply_filter_and_norm_STFTmag_fweighted(x_hat, y, H, self.args.tester.posterior_sampling.freq_weighting_filter, clean_audio)
 
+    def apply_filter_and_norm_STFTmag_fweighted(x_hat, y, H, freq_weighting_filter, clean_audio):
+        y_lpf = blind_bwe_utils.apply_filter(y, H, NFFT)
+        x_lpf = blind_bwe_utils.apply_filter(x_hat, H, NFFT)
+
+        # Generate guidance labels
+        guidance_labels = generate_guidance_labels(clean_audio)
+
+        # Calculate the CFG loss
+        cfg_loss = torch.sum(guidance_labels * x_hat, dim=-1)
+        cfg_loss = cfg_loss.mean()
+
+    # Compute the total loss as the sum of reconstruction loss and CFG loss
+        total_loss = norm_STFTmag_fweighted(x_lpf, y_lpf, freq_weighting_filter) + cfg_loss
+        return total_loss
     def optimize_params(self, denoised_estimate, y):
 
         Xden=blind_bwe_utils.apply_stft(denoised_estimate, self.args.tester.blind_bwe.NFFT)
@@ -275,7 +293,7 @@ class BlindSampler():
         self.diff_params.Snoise=self.args.tester.diff_params.Snoise
 
 
-    def get_rec_grads(self, x_hat, y, x, t_i):
+    def get_rec_grads(self, x_hat, y, x, t_i, clean_audio):
         """
         Compute the gradients of the reconstruction error with respect to the input
         """ 
@@ -297,8 +315,23 @@ class BlindSampler():
                 y=y+torch.randn_like(y)*t_min
 
         print("y",y.std(), "x_hat",x_hat.std())
-        norm=self.rec_distance(self.operator.degradation(x_hat), y)
+        norm = self.rec_distance(self.operator.degradation(x_hat), y)
         print("norm:", norm.item())
+
+        # Generate guidance labels
+        guidance_labels = self.generate_guidance_labels(clean_audio)
+
+         # Calculate the CFG loss
+        cfg_loss = torch.sum(guidance_labels * x_hat, dim=-1)
+        cfg_loss = cfg_loss.mean()
+        
+        # Compute the total loss as the sum of reconstruction loss and CFG loss
+        total_loss = norm + self.args.tester.cfg.guidance_weight * cfg_loss
+
+        rec_grads = torch.autograd.grad(outputs=total_loss.sum(),
+                                    inputs=x)
+
+        rec_grads = rec_grads[0]
 
         rec_grads=torch.autograd.grad(outputs=norm.sum(),
                                       inputs=x)
@@ -579,7 +612,7 @@ class BlindSampler():
 
         #self.operator.optimize_params(denoised_estimate, y)
 
-    def step(self, x, t_i, t_i_1, gamma_i, blind=False, y=None): 
+    def step(self, x, t_i, t_i_1, gamma_i, blind=False, y=None, clean_audio=None):
 
         if self.args.tester.posterior_sampling.SNR_observations !="None":
             snr=10**(self.args.tester.posterior_sampling.SNR_observations/10)
@@ -602,7 +635,7 @@ class BlindSampler():
             self.fit_params(x_den_2, y)
 
         if self.args.tester.posterior_sampling.xi>0 and y is not None:
-            rec_grads, rec_loss=self.get_rec_grads(x_den, y, x_hat, t_hat)
+            rec_grads, rec_loss=self.get_rec_grads(x_den, y, x_hat, t_hat, clean_audio)
         else:
             #adding this so that the code does not crash
             rec_loss=0
@@ -674,7 +707,7 @@ class BlindSampler():
         y=y.unsqueeze(0)
 
         self.y=y
-        return self.predict(shape=y.shape,device=y.device, blind=True, x_init=x_init)
+        return self.predict(shape=y.shape, device=y.device, blind=True, x_init=x_init, clean_audio=clean_audio)
 
     def predict_blind_bwe(
         self,
@@ -685,7 +718,7 @@ class BlindSampler():
         self.operator=LPFOperator(self.args, y.device)
         self.reference=reference
         self.y=y
-        return self.predict(shape=y.shape, device=y.device,  blind=True, x_init=x_init)
+        return self.predict(shape=y.shape, device=y.device, blind=True, x_init=x_init, clean_audio=clean_audio)
 
 
     def predict(
@@ -694,7 +727,8 @@ class BlindSampler():
         device=None,
         blind=False,
         x_init=None,
-        conditional=True
+        conditional=True,
+        clean_audio=None,
         ):
         if not conditional:
             self.y=None
@@ -741,7 +775,7 @@ class BlindSampler():
         for i in tqdm(range(0, self.nb_steps, 1)):
             self.step_count=i
 
-            out=self.step(x, t[i], t[i+1], gamma[i], blind=blind, y=self.y)
+            out = self.step(x, t[i], t[i+1], gamma[i], blind=blind, y=self.y, clean_audio=clean_audio)
             x, x_den, rec_loss, score, lh_score =out
             if self.y is not None:
                 score_norm=score.norm()
