@@ -41,10 +41,10 @@ python test.py  --config-name=conf_piano.yaml tester=only_uncond_maestro tester.
 
 ## Train or fine-tune your own diffusion model
 
-Train a model from scratch:
+Train a model from scratch (conditional noisy and clean):
 
 ```bash
-python train.py  --config-name=conf_custom.yaml model_dir="experiments/model_dir" exp.batch=$batch_size dset.path="/path/to/dataset"
+python train.py --config-name=conf_custom.yaml model_dir="experiments/model_dir" exp.batch=$batch_size"
 ```
 
 Fine-tune from pre-trained model:
